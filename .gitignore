@@ -1,5 +1,6 @@
 checkpoints/
 logs/
-data/
+data/ace/
+data/RAMS_1.0
 preprocessed_*/
 __pycache__/
