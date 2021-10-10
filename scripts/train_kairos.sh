@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -e 
 set -x 
+CKPT_NAME=gen-KAIROS
 
-CKPT_NAME='gen-KAIROS'
 rm -rf checkpoints/${CKPT_NAME}
-
 # does not use informative mentions 
 python train.py --model=constrained-gen --ckpt_name=${CKPT_NAME} \
     --dataset=KAIROS \

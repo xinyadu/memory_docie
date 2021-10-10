@@ -2,10 +2,9 @@
 set -e 
 set -x 
 CKPT_NAME=gen-KAIROS
-MODEL=constrained-gen
 
 rm -rf checkpoints/${CKPT_NAME}-pred 
-python train.py --model=$MODEL --ckpt_name=${CKPT_NAME}-pred \
+python train.py --model=constrained-gen --ckpt_name=${CKPT_NAME}-pred \
     --load_ckpt=checkpoints/${CKPT_NAME}/epoch=2-v0.ckpt \
     --dataset=KAIROS \
     --eval_only \

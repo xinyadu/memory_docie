@@ -103,7 +103,7 @@ def main():
     )
     parser.add_argument("--warmup_steps", default=0, type=int, help="Linear warmup over warmup_steps.")
     
-    parser.add_argument("--gpus", default=-1, help='-1 means train on all gpus')
+    parser.add_argument("--gpus", default=1, help='-1 means train on all gpus')
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
     parser.add_argument(
         "--fp16",
