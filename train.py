@@ -75,6 +75,7 @@ def main():
     parser.add_argument('--use_info', action='store_true', default=False, help='use informative mentions instead of the nearest mention.')
     parser.add_argument('--mark_trigger', action='store_true')
     parser.add_argument('--sample-gen', action='store_true', help='Do sampling when generation.')
+    parser.add_argument('--knowledge-pair-gen', action='store_true', help='decoding based on constraint pairs.')
     parser.add_argument("--train_batch_size", default=8, type=int, help="Batch size per GPU/CPU for training.")
     parser.add_argument(
         "--eval_batch_size", default=8, type=int, help="Batch size per GPU/CPU for evaluation."
@@ -171,7 +172,7 @@ def main():
         logger=tb_logger,
         min_epochs=args.num_train_epochs,
         max_epochs=args.num_train_epochs, 
-        gpus=args.gpus, 
+        # gpus=args.gpus, 
         checkpoint_callback=checkpoint_callback, 
         accumulate_grad_batches=args.accumulate_grad_batches,
         gradient_clip_val=args.gradient_clip_val, 

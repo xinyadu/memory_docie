@@ -236,6 +236,8 @@ class BartConstrainedGen(PreTrainedModel):
     @torch.no_grad()
     def generate(
         self,
+        id_pairs_down: Optional[dict] = None,
+        id_pairs_up: Optional[dict] = None,
         input_ids: Optional[torch.LongTensor] = None,
         max_length: Optional[int] = None,
         min_length: Optional[int] = None,
@@ -570,6 +572,8 @@ class BartConstrainedGen(PreTrainedModel):
                 batch_size=effective_batch_size,
                 attention_mask=attention_mask,
                 use_cache=use_cache,
+                id_pairs_down=id_pairs_down,
+                id_pairs_up=id_pairs_up,
                 model_kwargs=model_kwargs,
             )
 
@@ -593,6 +597,8 @@ class BartConstrainedGen(PreTrainedModel):
         batch_size,
         attention_mask,
         use_cache,
+        id_pairs_down,
+        id_pairs_up,
         model_kwargs,
     ):
         """Generate sequences for each example without beam search (num_beams == 1).
@@ -610,15 +616,43 @@ class BartConstrainedGen(PreTrainedModel):
             
             outputs = self(**model_inputs, return_dict=True) 
             # calling forward here 
-            
+            # import ipdb; ipdb.set_trace()
             #outputs.logits (batch, seq_len, input_seq_len)
             next_token_logits = outputs.logits[:, -1, :]
+
+            cur_tok_id = input_ids[0,-1].item()
+            down_words_ids = []
+            if id_pairs_down:
+                if cur_tok_id in id_pairs_down:
+                    down_words_ids.extend(id_pairs_down[cur_tok_id])
+            up_words_ids = []
+            if cur_tok_id == 5433: # NDS official
+                up_words_ids.append(781)
+            if cur_tok_id == 211: # Kzho
+                up_words_ids.append(13808)
+            if cur_tok_id == 13808:
+                up_words_ids.append(1638)
+            if cur_tok_id == 1638:
+                up_words_ids.append(4759)
+            if cur_tok_id == 12153: # Ahmad Khan Rahimi
+                up_words_ids.append(3338)
+            if cur_tok_id == 3338:
+                up_words_ids.append(10890)
+            if cur_tok_id == 10890:
+                up_words_ids.append(7517)
+            # import ipdb; ipdb.set_trace()
+            if id_pairs_up:
+                if cur_tok_id in id_pairs_up:
+                    up_words_ids.extend(id_pairs_up[cur_tok_id])
+                # import ipdb; ipdb.set_trace()
 
             scores = self.postprocess_next_token_scores(
                 scores=next_token_logits,
                 input_ids=input_ids,
                 no_repeat_ngram_size=no_repeat_ngram_size,
                 bad_words_ids=bad_words_ids,
+                down_words_ids=down_words_ids,
+                up_words_ids=up_words_ids,
                 cur_len=cur_len,
                 min_length=min_length,
                 max_length=max_length,
@@ -685,6 +719,8 @@ class BartConstrainedGen(PreTrainedModel):
         input_ids,
         no_repeat_ngram_size,
         bad_words_ids,
+        down_words_ids,
+        up_words_ids,
         cur_len,
         min_length,
         max_length,
@@ -706,6 +742,18 @@ class BartConstrainedGen(PreTrainedModel):
         # set eos token prob to zero if min_length is not reached
         if eos_token_id is not None and cur_len < min_length:
             scores[:, eos_token_id] = -float("inf")
+
+        # down_words_ids
+        for tok_id in down_words_ids:
+            scores[:, tok_id] /= 100
+        # up_words_ids
+        for tok_id in up_words_ids:
+            scores[:, tok_id] = scores[:, tok_id].abs()*5
+            # print("<arg>:", scores[:, 50265], "Dzho:", scores[:, 211])
+            # import ipdb; ipdb.set_trace()
+
+        # <arg> token (increase recall)
+        # scores[:, 50265] /= 10
 
         return scores
     

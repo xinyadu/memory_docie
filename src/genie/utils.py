@@ -82,6 +82,21 @@ def load_ontology(dataset, ontology_file=None):
                 evt_dict[argname].append('arg{}'.format(i+1))
             else:
                 evt_dict[argname] = ['arg{}'.format(i+1)]
+
+    # add mapping between <argx> and the word before it
+    for evt_name, evt_dict in ontology_dict.items():
+        evt_dict['arg_to_prev'] = {}
+        for i, argname in enumerate(evt_dict['roles']):
+            template_words = evt_dict['template'].strip().split()
+            try:
+                idx = template_words.index("<" + evt_dict[argname][0] + ">")
+            except ValueError:
+                import ipdb; ipdb.set_trace()
+            if idx == 0:
+                evt_dict['arg_to_prev'][argname] = "<s>"
+            else:
+                evt_dict['arg_to_prev'][argname] = template_words[idx-1]
+
     
     return ontology_dict
 

@@ -224,6 +224,7 @@ class KAIROSDataModule(pl.LightningDataModule):
                             processed_ex = {
                                 'event_idx': i, 
                                 'doc_key': ex['doc_id'], 
+                                'event_type': evt_type, 
                                 'input_token_ids':input_tokens['input_ids'],
                                 'input_attn_mask': input_tokens['attention_mask'],
                                 'tgt_token_ids': tgt_tokens['input_ids'],
@@ -256,8 +257,8 @@ class KAIROSDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         dataset = IEDataset('preprocessed_{}/test.jsonl'.format(self.hparams.dataset))
-        
-        dataloader = DataLoader(dataset, pin_memory=True, num_workers=2, 
+
+        dataloader = DataLoader(dataset[:], pin_memory=True, num_workers=2, 
             collate_fn=my_collate, 
             batch_size=self.hparams.eval_batch_size, shuffle=False)
 
