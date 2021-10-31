@@ -17,4 +17,5 @@ python train.py --model=constrained-gen --ckpt_name=${CKPT_NAME} \
     --num_train_epochs=5 \
     --mark_trigger \
     --coref_dir=data/wikievents/coref \
-    --use_info 
+    --use_info \
+    # --sim_train

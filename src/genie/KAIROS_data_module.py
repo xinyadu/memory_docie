@@ -14,6 +14,8 @@ import pytorch_lightning as pl
 from .data import IEDataset, my_collate
 from .utils import load_ontology, check_pronoun, clean_mention
 
+from sentence_transformers import SentenceTransformer, util
+
 MAX_CONTEXT_LENGTH=400 # measured in words 
 MAX_LENGTH=512
 MAX_TGT_LENGTH=70
@@ -27,6 +29,8 @@ class KAIROSDataModule(pl.LightningDataModule):
         self.hparams = args 
         self.tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
         self.tokenizer.add_tokens([' <arg>',' <tgr>'])
+
+        self.sim_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
     
 
     def create_gold_gen(self, ex, ontology_dict,mark_trigger=True, index=0, ent2info=None, use_info=False):
@@ -160,7 +164,10 @@ class KAIROSDataModule(pl.LightningDataModule):
         for w in space_tokenized_template:
             tokenized_template.extend(self.tokenizer.tokenize(w, add_prefix_space=True))
         
-        return tokenized_input_template, tokenized_template, context
+        # calculate sbert embedding
+        context_emb = self.sim_model.encode(' '.join(context_words))
+        out_template_emb = self.sim_model.encode(output_template)
+        return tokenized_input_template, tokenized_template, context, context_emb, out_template_emb, ' '.join(context_words)
 
     
 
@@ -190,7 +197,7 @@ class KAIROSDataModule(pl.LightningDataModule):
                             for eid in cluster:
                                 ent2info[eid] = corefs['informative_mentions'][cidx]
                             
-
+                        all_output_templates, all_out_template_embs = [], []
                         for i in range(len(ex['event_mentions'])):
                             if split=='train' and len(ex['event_mentions'][i]['arguments']) ==0:
                                 # skip mentions with no arguments 
@@ -200,15 +207,26 @@ class KAIROSDataModule(pl.LightningDataModule):
                             if evt_type not in ontology_dict: # should be a rare event type 
                                 continue 
                             
-                            input_template, output_template, context= self.create_gold_gen(ex, ontology_dict, self.hparams.mark_trigger, 
+                            input_template, output_template, context, context_emb, out_template_emb, context_words = self.create_gold_gen(ex, ontology_dict, self.hparams.mark_trigger, 
                                 index=i, ent2info=ent2info, use_info=self.hparams.use_info)
-                            
-                            
+
+                            most_sim_out_template = []
+                            if len(all_out_template_embs)>0:
+                                cosine_scores = util.pytorch_cos_sim([context_emb], all_out_template_embs)
+                                most_sim_idx = torch.argmax(cosine_scores, dim=-1)
+                                # if len(all_out_template_embs)>2: import ipdb; ipdb.set_trace()
+                                most_sim_out_template = all_output_templates[most_sim_idx]
+                            all_output_templates.append(output_template)
+                            all_out_template_embs.append(out_template_emb)
+
                             max_tokens = max(len(context) + len(input_template) +2, max_tokens)
                                 # print(len(context) + len(input_template) +2 ) 
                             max_tgt = max(len(output_template) +1 , max_tgt)
                             assert(len(output_template) < MAX_TGT_LENGTH)
-                            input_tokens = self.tokenizer.encode_plus(input_template, context, 
+
+                            if (split == 'train' or split == 'val') and self.hparams.sim_train:
+                                context.extend(['</s>']+most_sim_out_template)
+                            input_tokens = self.tokenizer.encode_plus(input_template, context,
                                     add_special_tokens=True,
                                     add_prefix_space=True,
                                     max_length=MAX_LENGTH,
@@ -229,12 +247,16 @@ class KAIROSDataModule(pl.LightningDataModule):
                                 'input_attn_mask': input_tokens['attention_mask'],
                                 'tgt_token_ids': tgt_tokens['input_ids'],
                                 'tgt_attn_mask': tgt_tokens['attention_mask'],
+                                # 'input_template': input_template,
+                                # 'context_tokens': context,
+                                # 'context_words': context_words,
                             }
                             writer.write(json.dumps(processed_ex) + '\n')
             
 
             print('longest context:{}'.format(max_tokens))
             print('longest target {}'.format(max_tgt))
+            # import ipdb; ipdb.set_trace()
     
     def train_dataloader(self):
         dataset = IEDataset('preprocessed_{}/train.jsonl'.format(self.hparams.dataset))

@@ -91,7 +91,8 @@ def load_ontology(dataset, ontology_file=None):
             try:
                 idx = template_words.index("<" + evt_dict[argname][0] + ">")
             except ValueError:
-                import ipdb; ipdb.set_trace()
+                # import ipdb; ipdb.set_trace() # 'ArtifactExistence.DamageDestroyDisableDismantle.Dismantle' '<arg1> dismantled <arg2> using <arg3> instrument in <arg4> place'
+                idx = 0
             if idx == 0:
                 evt_dict['arg_to_prev'][argname] = "<s>"
             else:

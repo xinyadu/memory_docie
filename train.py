@@ -37,7 +37,7 @@ def main():
         "--dataset",
         type=str,
         required=True,
-        choices=['RAMS', 'ACE', 'KAIROS']
+        choices=['RAMS', 'ACE', 'KAIROS', 'KAIROS0']
     )
     parser.add_argument('--tmp_dir', type=str)
     parser.add_argument(
@@ -76,6 +76,7 @@ def main():
     parser.add_argument('--mark_trigger', action='store_true')
     parser.add_argument('--sample-gen', action='store_true', help='Do sampling when generation.')
     parser.add_argument('--knowledge-pair-gen', action='store_true', help='decoding based on constraint pairs.')
+    parser.add_argument('--sim_train', action='store_true', help='train with most similar template as additionl context.')
     parser.add_argument("--train_batch_size", default=8, type=int, help="Batch size per GPU/CPU for training.")
     parser.add_argument(
         "--eval_batch_size", default=8, type=int, help="Batch size per GPU/CPU for evaluation."
@@ -158,7 +159,7 @@ def main():
         dm = RAMSDataModule(args)
     elif args.dataset == 'ACE':
         dm = ACEDataModule(args)
-    elif args.dataset == 'KAIROS':
+    elif args.dataset == 'KAIROS' or args.dataset == 'KAIROS0':
         dm = KAIROSDataModule(args)
 
 
@@ -172,7 +173,7 @@ def main():
         logger=tb_logger,
         min_epochs=args.num_train_epochs,
         max_epochs=args.num_train_epochs, 
-        # gpus=args.gpus, 
+        gpus=args.gpus, 
         checkpoint_callback=checkpoint_callback, 
         accumulate_grad_batches=args.accumulate_grad_batches,
         gradient_clip_val=args.gradient_clip_val, 
