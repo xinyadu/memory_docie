@@ -626,21 +626,24 @@ class BartConstrainedGen(PreTrainedModel):
                 if cur_tok_id in id_pairs_down:
                     down_words_ids.extend(id_pairs_down[cur_tok_id])
             up_words_ids = []
-            if cur_tok_id == 5433: # NDS official
-                up_words_ids.append(781)
-            if cur_tok_id == 211: # Kzho
-                up_words_ids.append(13808)
-            if cur_tok_id == 13808:
-                up_words_ids.append(1638)
-            if cur_tok_id == 1638:
-                up_words_ids.append(4759)
-            if cur_tok_id == 12153: # Ahmad Khan Rahimi
-                up_words_ids.append(3338)
-            if cur_tok_id == 3338:
-                up_words_ids.append(10890)
-            if cur_tok_id == 10890:
-                up_words_ids.append(7517)
-            # import ipdb; ipdb.set_trace()
+            up_words_ids2 = []
+            # if cur_tok_id == 5433: # NDS official
+            #     up_words_ids2.append(781)
+            # if cur_tok_id == 211: # Dzho
+            #     up_words_ids2.append(13808)
+            # if cur_tok_id == 13808:
+            #     up_words_ids2.append(1638)
+            # if cur_tok_id == 1638:
+            #     up_words_ids2.append(4759)
+            # if cur_tok_id == 12153: # Ahmad Khan Rahimi
+            #     up_words_ids2.append(3338)
+            # if cur_tok_id == 3338:
+            #     up_words_ids2.append(10890)
+            # if cur_tok_id == 10890:
+            #     up_words_ids2.append(7517)
+            if cur_tok_id == 2385: # Jr.
+                up_words_ids2.append(4)
+            # # import ipdb; ipdb.set_trace()
             if id_pairs_up:
                 if cur_tok_id in id_pairs_up:
                     up_words_ids.extend(id_pairs_up[cur_tok_id])
@@ -653,6 +656,7 @@ class BartConstrainedGen(PreTrainedModel):
                 bad_words_ids=bad_words_ids,
                 down_words_ids=down_words_ids,
                 up_words_ids=up_words_ids,
+                up_words_ids2=up_words_ids2,
                 cur_len=cur_len,
                 min_length=min_length,
                 max_length=max_length,
@@ -721,6 +725,7 @@ class BartConstrainedGen(PreTrainedModel):
         bad_words_ids,
         down_words_ids,
         up_words_ids,
+        up_words_ids2,
         cur_len,
         min_length,
         max_length,
@@ -743,12 +748,18 @@ class BartConstrainedGen(PreTrainedModel):
         if eos_token_id is not None and cur_len < min_length:
             scores[:, eos_token_id] = -float("inf")
 
+        ori_next_token = torch.argmax(scores, dim=-1) # other case, only replace <arg>
         # down_words_ids
         for tok_id in down_words_ids:
-            scores[:, tok_id] /= 100
+            if ori_next_token == tok_id:
+                scores[:, tok_id] /= 100
+                # scores[:, 50265] = scores[:, 50265].abs()*100
         # up_words_ids
-        for tok_id in up_words_ids:
-            scores[:, tok_id] = scores[:, tok_id].abs()*5
+        for tok_id in up_words_ids2:
+            scores[:, tok_id] = scores[:, tok_id].abs()*100
+        if ori_next_token != 50265:
+            for tok_id in up_words_ids:
+                scores[:, tok_id] = scores[:, tok_id].abs()*1000
             # print("<arg>:", scores[:, 50265], "Dzho:", scores[:, 211])
             # import ipdb; ipdb.set_trace()
 

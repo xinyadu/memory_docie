@@ -140,7 +140,7 @@ def main():
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=args.ckpt_dir,
-        save_top_k=2,
+        save_top_k=6, #6
         monitor='val/loss',
         mode='min',
         save_weights_only=True,

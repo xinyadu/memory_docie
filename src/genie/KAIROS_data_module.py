@@ -165,8 +165,8 @@ class KAIROSDataModule(pl.LightningDataModule):
             tokenized_template.extend(self.tokenizer.tokenize(w, add_prefix_space=True))
         
         # calculate sbert embedding
-        context_emb = self.sim_model.encode(' '.join(context_words))
-        out_template_emb = self.sim_model.encode(output_template)
+        context_emb = self.sim_model.encode(' '.join(context_words), show_progress_bar=False)
+        out_template_emb = self.sim_model.encode(output_template, show_progress_bar=False)
         return tokenized_input_template, tokenized_template, context, context_emb, out_template_emb, ' '.join(context_words)
 
     
@@ -174,7 +174,10 @@ class KAIROSDataModule(pl.LightningDataModule):
 
             
     def prepare_data(self):
-        data_dir = 'preprocessed_{}'.format(self.hparams.dataset)
+        if self.hparams.sim_train:
+            data_dir = 'preprocessed_simtr_{}'.format(self.hparams.dataset)
+        else:
+            data_dir = 'preprocessed_{}'.format(self.hparams.dataset)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
             ontology_dict = load_ontology(self.hparams.dataset) 
@@ -225,7 +228,11 @@ class KAIROSDataModule(pl.LightningDataModule):
                             assert(len(output_template) < MAX_TGT_LENGTH)
 
                             if (split == 'train' or split == 'val') and self.hparams.sim_train:
-                                context.extend(['</s>']+most_sim_out_template)
+                                # if most_sim_out_template:
+                                # context.extend(['</s>']+most_sim_out_template)
+                                context = most_sim_out_template+['</s>']+context
+                                # else:
+                                    # context.extend(['</s>']+input_template)
                             input_tokens = self.tokenizer.encode_plus(input_template, context,
                                     add_special_tokens=True,
                                     add_prefix_space=True,
@@ -247,9 +254,9 @@ class KAIROSDataModule(pl.LightningDataModule):
                                 'input_attn_mask': input_tokens['attention_mask'],
                                 'tgt_token_ids': tgt_tokens['input_ids'],
                                 'tgt_attn_mask': tgt_tokens['attention_mask'],
-                                # 'input_template': input_template,
-                                # 'context_tokens': context,
-                                # 'context_words': context_words,
+                                'input_template': input_template,
+                                'context_tokens': context,
+                                'context_words': context_words,
                             }
                             writer.write(json.dumps(processed_ex) + '\n')
             
@@ -259,7 +266,10 @@ class KAIROSDataModule(pl.LightningDataModule):
             # import ipdb; ipdb.set_trace()
     
     def train_dataloader(self):
-        dataset = IEDataset('preprocessed_{}/train.jsonl'.format(self.hparams.dataset))
+        if self.hparams.sim_train:
+            dataset = IEDataset('preprocessed_simtr_{}/train.jsonl'.format(self.hparams.dataset))
+        else:
+            dataset = IEDataset('preprocessed_{}/train.jsonl'.format(self.hparams.dataset))
         
         dataloader = DataLoader(dataset, 
             pin_memory=True, num_workers=2, 
@@ -270,7 +280,10 @@ class KAIROSDataModule(pl.LightningDataModule):
 
     
     def val_dataloader(self):
-        dataset = IEDataset('preprocessed_{}/val.jsonl'.format(self.hparams.dataset))
+        if self.hparams.sim_train:
+            dataset = IEDataset('preprocessed_simtr_{}/val.jsonl'.format(self.hparams.dataset))
+        else:
+            dataset = IEDataset('preprocessed_{}/val.jsonl'.format(self.hparams.dataset))
         
         dataloader = DataLoader(dataset, pin_memory=True, num_workers=2, 
             collate_fn=my_collate,
@@ -278,7 +291,10 @@ class KAIROSDataModule(pl.LightningDataModule):
         return dataloader
 
     def test_dataloader(self):
-        dataset = IEDataset('preprocessed_{}/test.jsonl'.format(self.hparams.dataset))
+        if self.hparams.sim_train:
+            dataset = IEDataset('preprocessed_simtr_{}/test.jsonl'.format(self.hparams.dataset))
+        else:
+            dataset = IEDataset('preprocessed_{}/test.jsonl'.format(self.hparams.dataset))
 
         dataloader = DataLoader(dataset[:], pin_memory=True, num_workers=2, 
             collate_fn=my_collate, 

@@ -18,9 +18,9 @@ import re
 
 logger = logging.getLogger(__name__)
 
-# from sentence_transformers import SentenceTransformer, util
-
-# MAX_LENGTH=512
+from sentence_transformers import SentenceTransformer, util
+sim_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+MAX_LENGTH=512
 
 class GenIEModel(pl.LightningModule):
     def __init__(self, args):
@@ -43,49 +43,45 @@ class GenIEModel(pl.LightningModule):
             raise NotImplementedError
 
 
-        self.pair_constraints = {# ('Cognitive.IdentifyCategorize.Unspecified_Identifier', 'Contact.Contact.Correspondence_Participant'),
-            # ('Cognitive.Inspection.SensoryObserve_ObservedEntity', 'Transaction.ExchangeBuySell.Unspecified_Recipient'),
-            # ('Cognitive.Inspection.SensoryObserve_ObservedEntity', 'Personnel.StartPosition.Unspecified_Employee'),
-            # # ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.ThreatenCoerce.Unspecified_Communicator'),
-            # ('Conflict.Attack.Unspecified_Attacker', 'Contact.ThreatenCoerce.Unspecified_Communicator'),
-            # ('Justice.TrialHearing.Unspecified_Defendant', 'Movement.Transportation.Unspecified_Transporter'),
-            # 
-            ('Cognitive.IdentifyCategorize.Unspecified_Identifier', 'Contact.Contact.Correspondence_Participant'),
-            # ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.Contact.Meet_Participant'),
-            ('Justice.Sentence.Unspecified_JudgeCourt', 'Life.Die.Unspecified_Killer'),
-            # ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.Contact.Unspecified_Participant')
-            # ('Justice.Sentence.Unspecified_Defendant', 'Life.Injure.Unspecified_Victim')
-            # ('Life.Injure.Unspecified_Instrument', 'Life.Injure.Unspecified_Instrument')
-            # ('ArtifactExistence.ManufactureAssemble.Unspecified_Artifact', 'Life.Injure.Unspecified_Instrument')
-            # ('ArtifactExistence.ManufactureAssemble.Unspecified_Artifact', 'ArtifactExistence.ManufactureAssemble.Unspecified_Artifact')
-            # ('Cognitive.IdentifyCategorize.Unspecified_Identifier', 'Cognitive.IdentifyCategorize.Unspecified_Identifier')
-            # ('ArtifactExistence.DamageDestroyDisableDismantle.Dismantle_Artifact', 'ArtifactExistence.DamageDestroyDisableDismantle.Dismantle_Artifact')
-            ('Medical.Intervention.Unspecified_Patient', 'Medical.Intervention.Unspecified_Patient'), 
-            ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.Contact.Broadcast_Communicator'), # taliban
-            ('Justice.TrialHearing.Unspecified_Defendant', 'Life.Die.Unspecified_Killer'),
-            # ('Conflict.Attack.Unspecified_Attacker', 'Contact.Contact.Broadcast_Communicator') # taliban
-            # ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.ThreatenCoerce.Unspecified_Communicator')
-            # ('Conflict.Attack.Unspecified_Attacker', 'Contact.ThreatenCoerce.Unspecified_Communicator')
-            # ('Conflict.Attack.DetonateExplode_Attacker', 'Movement.Transportation.IllegalTransportation_Transporter')
-            # ('Life.Die.Unspecified_Victim', 'Movement.Transportation.IllegalTransportation_Transporter')
-            # ('Contact.Contact.Unspecified_Participant', 'Justice.ChargeIndict.Unspecified_Prosecutor')
-            # ('Justice.ChargeIndict.Unspecified_Prosecutor', 'Justice.ChargeIndict.Unspecified_Prosecutor')
-            ('Justice.ArrestJailDetain.Unspecified_Detainee', 'Movement.Transportation.Unspecified_PassengerArtifact'),
-            # ('Conflict.Attack.Unspecified_Attacker', 'Contact.Contact.Unspecified_Participant')
-            # ('Conflict.Attack.Unspecified_Attacker', 'Justice.ArrestJailDetain.Unspecified_Jailer'),
-            # ('Justice.TrialHearing.Unspecified_Defendant', 'Movement.Transportation.Unspecified_PassengerArtifact')
-            # ('Conflict.Attack.DetonateExplode_Attacker', 'Justice.ArrestJailDetain.Unspecified_Jailer')
-            ('Contact.Contact.Unspecified_Participant', 'Movement.Transportation.Unspecified_PassengerArtifact'),
-            ('Contact.Contact.Unspecified_Participant', 'Justice.ArrestJailDetain.Unspecified_Detainee'),
-            # ('Contact.Contact.Unspecified_Participant', 'Justice.InvestigateCrime.Unspecified_Investigator') #bellingcat
-            # ('Contact.RequestCommand.Unspecified_Communicator', 'Control.ImpedeInterfereWith.Unspecified_Impeder') # wiki_mass_car_bombings_0_news_9-E1
-            # ('Contact.RequestCommand.Unspecified_Communicator', 'Contact.RequestCommand.Unspecified_Recipient')
-            ('GenericCrime.GenericCrime.GenericCrime_Perpetrator', 'Justice.ArrestJailDetain.Unspecified_Detainee'), #wiki_drone_strikes_1_news_1-E1
-            # ('GenericCrime.GenericCrime.GenericCrime_Victim', 'GenericCrime.GenericCrime.GenericCrime_Victim') #scenario_en_kairos_2-E1
-            # ('GenericCrime.GenericCrime.GenericCrime_Victim', 'Life.Die.Unspecified_Victim')
+
+        self.pair_constraints = {
+        ('Justice.Sentence.Unspecified_JudgeCourt', 'Life.Die.Unspecified_Victim'),
+        ('Justice.Sentence.Unspecified_Defendant', 'Life.Die.Unspecified_Victim'),
+        # ('Justice.TrialHearing.Unspecified_Defendant', 'Life.Injure.Unspecified_Victim'),
+        # ('Contact.Contact.Broadcast_Communicator', 'Contact.ThreatenCoerce.Unspecified_Communicator'),
+        ('Control.ImpedeInterfereWith.Unspecified_Impeder', 'Justice.ArrestJailDetain.Unspecified_Jailer'),
+        ('Contact.RequestCommand.Unspecified_Recipient', 'Justice.ArrestJailDetain.Unspecified_Jailer'),
+        ('Life.Injure.Unspecified_Injurer', 'Transaction.ExchangeBuySell.Unspecified_Giver'),
+        ('Justice.TrialHearing.Unspecified_Defendant', 'Transaction.ExchangeBuySell.Unspecified_Giver'),
+        ('Justice.TrialHearing.Unspecified_Defendant', 'Transaction.ExchangeBuySell.Unspecified_Recipient'),
+        ## ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.Contact.Meet_Participant'),
+        ('Justice.Sentence.Unspecified_JudgeCourt', 'Life.Die.Unspecified_Victim'), # Justice.Sentence.Unspecified,JudgeCourt,Life.Die.Unspecified,Victim
+        ('Justice.ArrestJailDetain.Unspecified_Detainee', 'Justice.ArrestJailDetain.Unspecified_Detainee'), # Justice.ArrestJailDetain.Unspecified,Detainee,Justice.ArrestJailDetain.Unspecified,Detainee
+        # ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.Contact.Unspecified_Participant'),
+        # ('Justice.Sentence.Unspecified_Defendant', 'Life.Injure.Unspecified_Victim'), # people people (not infor.)
+        # ('ArtifactExistence.ManufactureAssemble.Unspecified_Artifact', 'ArtifactExistence.ManufactureAssemble.Unspecified_Artifact'), # bomb bomb (not infor.)
+        # ('ArtifactExistence.DamageDestroyDisableDismantle.Dismantle_Artifact', 'ArtifactExistence.DamageDestroyDisableDismantle.Dismantle_Artifact'), #device device (not infor.)
+        # ('Life.Injure.Unspecified_Injurer', 'Life.Injure.Unspecified_Injurer'),
+        # ('Justice.TrialHearing.Unspecified_Defendant', 'Justice.TrialHearing.Unspecified_Defendant'),
+        ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.Contact.Broadcast_Communicator'), # Conflict.Attack.DetonateExplode,Attacker,Contact.Contact.Broadcast,Communicator
+        ('Conflict.Attack.Unspecified_Attacker', 'Contact.Contact.Broadcast_Communicator'), # Conflict.Attack.Unspecified,Attacker,Contact.Contact.Broadcast,Communicator
+        ('Conflict.Attack.DetonateExplode_Attacker', 'Contact.ThreatenCoerce.Unspecified_Communicator'),
+        ('Conflict.Attack.Unspecified_Attacker', 'Contact.ThreatenCoerce.Unspecified_Communicator'),
+        # ('Conflict.Attack.DetonateExplode_Attacker', 'Movement.Transportation.IllegalTransportation_Transporter'),
+        # ('Life.Die.Unspecified_Victim', 'Movement.Transportation.IllegalTransportation_Transporter'),
+        # # ('Justice.ChargeIndict.Unspecified_JudgeCourt', 'Justice.TrialHearing.Unspecified_JudgeCourt'),
+        # # ('Justice.ChargeIndict.Unspecified_Prosecutor', 'Justice.ChargeIndict.Unspecified_Prosecutor'),
+        # ('Conflict.Attack.DetonateExplode_Attacker', 'Movement.Transportation.Unspecified_PassengerArtifact'),
+        # # ('Contact.Contact.Unspecified_Participant', 'Justice.InvestigateCrime.Unspecified_Investigator'),
+        # # ('Contact.RequestCommand.Unspecified_Communicator', 'Contact.RequestCommand.Unspecified_Communicator'),
+        # # ('GenericCrime.GenericCrime.GenericCrime_Victim', 'GenericCrime.GenericCrime.GenericCrime_Victim'),
+        # # ('GenericCrime.GenericCrime.GenericCrime_Victim', 'Life.Die.Unspecified_Victim'),
         }
-        self.up_constrains = {"Killer_Attacker_Injurer_Damager_Destroyer": "Killer_Attacker_Destroyer_Defendant"
+        self.up_constrains = {
+        "Killer_Attacker_Injurer_Damager_Destroyer": "Killer_Attacker_Destroyer_Defendant",
+        "JudgeCourt": "JudgeCourt",
         }
+        self.up_thresh = 4
 
         self.ontology_dict = load_ontology(dataset="KAIROS")
         for key in self.ontology_dict:
@@ -102,7 +98,8 @@ class GenIEModel(pl.LightningModule):
         self.memory = {}
         self.memory_down = {}
         self.memory_up_cnt = defaultdict(int)
-        self.up_thresh = 5
+        # self.memory_place = defaultdict(int)
+        
         with open("preprocessed_KAIROS0/test.jsonl", 'r') as f:
             for line in f:
                 ex = json.loads(line.strip())
@@ -125,14 +122,23 @@ class GenIEModel(pl.LightningModule):
                     for role_grp_key, role_grp in self.up_constrains.items():
                         if role_grp not in self.memory_up_cnt[doc_key]:
                             self.memory_up_cnt[doc_key][role_grp] = {} # ent1: #, ent2: #
+                            
+                            if role_grp_key == 'JudgeCourt':
+                                ent = "George O'Toole Jr."
+                                # import ipdb; ipdb.set_trace()
+                                w_list = self.tokenizer.tokenize("Jr.", add_prefix_space=True)
+                                out_id = self.tokenizer.encode_plus(w_list, add_special_tokens=True, add_prefix_space=True)['input_ids'][1]
+                                self.memory_up_cnt[doc_key][role_grp][ent] = [out_id, self.up_thresh]
 
-        if self.hparams.sim_train:
-            self.sim_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-            self.all_output_templates, self.all_out_template_embs = {}, {}
-            for doc_key in self.memory:
-                if doc_key not in self.all_output_templates:
-                    self.all_output_templates[doc_key] = []
-                    self.all_out_template_embs[doc_key] = []
+                    # place
+                    # self.memory_place[doc_key] = []
+        # if self.hparams.sim_train:
+            # self.sim_model = SentenceTransformer('paraphrase-MiniLM-L6-v2') no other model in __init__!!
+        self.all_output_templates, self.all_out_template_embs = {}, {}
+        for doc_key in self.memory:
+            if doc_key not in self.all_output_templates:
+                self.all_output_templates[doc_key] = []
+                self.all_out_template_embs[doc_key] = []
 
 
     def forward(self, inputs):
@@ -250,7 +256,7 @@ class GenIEModel(pl.LightningModule):
                 if ents:
                     down_out_ids = []
                     down_out_ids_print = []
-                    for ent in ents:
+                    for ent in ents[:]: # for ent in ents: limited mem
                         down_out_ids.append(ent[-1])
                         down_out_ids_print.append(ent[:-1])
                     # import ipdb; ipdb.set_trace()
@@ -267,16 +273,23 @@ class GenIEModel(pl.LightningModule):
                     if role in role_grp:
                         in_id = self.ontology_dict[evt_type]['arg_to_prev'][role][-1]
                         for ent in self.memory_up_cnt[doc_key][role_grp]:
-                            if self.memory_up_cnt[doc_key][role_grp][ent][-1] >= self.up_thresh:
+                            if self.memory_up_cnt[doc_key][role_grp][ent][-1] >= self.up_thresh and self.memory_up_cnt[doc_key][role_grp][ent][0] in batch['input_token_ids']:
                                 if in_id not in id_pairs_up: id_pairs_up[in_id] = []
                                 id_pairs_up[in_id].append(self.memory_up_cnt[doc_key][role_grp][ent][0])
-                            
-        # import ipdb; ipdb.set_trace()
+            
+            # if self.memory_place[doc_key] and "Place" in self.ontology_dict[evt_type]:
+            #     role = "Place"
+            #     in_id = self.ontology_dict[evt_type]['arg_to_prev'][role][-1]
+            #     if in_id not in id_pairs_up: id_pairs_up[in_id] = []
+            #     id_pairs_up[in_id].append(self.memory_place[doc_key][-1])
 
+                            
+        # # import ipdb; ipdb.set_trace()
+        input_token_ids = batch['input_token_ids']
         if self.hparams.sim_train:
             # calculate sbert embedding and find/add most similar
             doc_key = batch['doc_key'][0]
-            context_emb = self.sim_model.encode(batch['context_words'][0])
+            context_emb = sim_model.encode(batch['context_words'][0], show_progress_bar=False)
             most_sim_out_template = []
             context = batch['context_tokens'][0]
             if len(self.all_out_template_embs[doc_key])>0:
@@ -284,26 +297,42 @@ class GenIEModel(pl.LightningModule):
                 most_sim_idx = torch.argmax(cosine_scores, dim=-1)
                 # if len(all_out_template_embs[doc_key])>2: import ipdb; ipdb.set_trace()
                 most_sim_out_template = self.all_output_templates[doc_key][most_sim_idx]
-            context.extend(['</s>']+most_sim_out_template)
+                # most_sim_out_template = self.all_output_templates[doc_key][-1] # random ablation
+                # if len(self.all_out_template_embs[doc_key])>=2: 
+                    # most_sim_out_template = self.all_output_templates[doc_key][0]
+            # import ipdb; ipdb.set_trace()
+            # if most_sim_out_template:
+            # context.extend(['</s>']+most_sim_out_template)
+            context = most_sim_out_template+['</s>']+context
+            # context = context
+            # else:
+                # context.extend(['</s>']+batch['input_template'][0])
             input_tokens = self.tokenizer.encode_plus(batch['input_template'][0], context,
                     add_special_tokens=True,
                     add_prefix_space=True,
                     max_length=MAX_LENGTH,
                     truncation='only_second',
                     padding='max_length')
+            input_token_ids = torch.stack([torch.LongTensor(input_tokens['input_ids'])]) 
+            if batch['input_token_ids'].device.type != 'cpu':
+                input_token_ids = input_token_ids.cuda()
+            # if batch_idx<5: print(input_token_ids)
             # import ipdb; ipdb.set_trace()
+            # if most_sim_out_template:
+            #     import ipdb; ipdb.set_trace()
 
         # gen without id_pairs
-        sample_output_no_knowledge = self.model.generate({}, {}, batch['input_token_ids'], do_sample=False, 
+        sample_output_no_knowledge = self.model.generate({}, {}, input_token_ids, do_sample=False, #batch['input_token_ids']
                                 max_length=30, num_return_sequences=1,num_beams=1,)
 
         if self.hparams.knowledge_pair_gen:
             if self.hparams.sample_gen:
-                sample_output = self.model.generate(batch['input_token_ids'], do_sample=True, 
+                sample_output = self.model.generate(input_token_ids, do_sample=True, 
                                     top_k=20, top_p=0.95, max_length=30, num_return_sequences=1,num_beams=1,
                                 )
             else:
-                sample_output = self.model.generate(id_pairs_down, id_pairs_up, batch['input_token_ids'], do_sample=False, 
+                # id_pairs_down, id_pairs_up = {}, {}
+                sample_output = self.model.generate(id_pairs_down, id_pairs_up, input_token_ids, do_sample=False, 
                                     max_length=30, num_return_sequences=1,num_beams=1,
                                 )
 
@@ -312,6 +341,7 @@ class GenIEModel(pl.LightningModule):
             evt_type = batch['event_type'][-1]
             pred_template = self.tokenizer.decode(sample_output.squeeze(0), skip_special_tokens=True)
             predicted_args = self.extract_args_from_template(evt_type, pred_template)
+            # memory_place_cache = []
             for role in predicted_args:
                 for ent in predicted_args[role]:
                     if not ent: continue
@@ -339,11 +369,16 @@ class GenIEModel(pl.LightningModule):
                                 self.memory_up_cnt[doc_key][role_grp][ent[0]] = [out_id, 1]
                             else:
                                 self.memory_up_cnt[doc_key][role_grp][ent[0]][-1] += 1
-                            # import ipdb; ipdb.set_trace()
+                    # place
+                    # if role == "Place":
+                    #     if len(w_list)>1:
+                    #         memory_place_cache.append(out_id)
+
+            # self.memory_place[doc_key] = memory_place_cache
             
             if id_pairs_down: # if id_pairs_up:
                 print(batch_idx+1)
-                # print(id_pairs_down_print)
+                print(id_pairs_down_print)
                 # print(id_pairs_up)
                 print("ored:", self.tokenizer.decode(sample_output_no_knowledge.squeeze(0), skip_special_tokens=True))
                 print("pred:", pred_template)
@@ -358,10 +393,17 @@ class GenIEModel(pl.LightningModule):
 
         if self.hparams.sim_train:
             # add new output_template
-            output_template = self.tokenizer.decode(sample_output, skip_special_tokens=True)
-            out_template_emb = self.sim_model.encode(output_template)
-            self.all_output_templates[doc_key].append(output_template)
-            self.all_out_template_embs[doc_key].append(out_template_emb)
+            output_template = self.tokenizer.decode(sample_output[0][0], skip_special_tokens=True)
+            # import ipdb; ipdb.set_trace()
+            out_template_emb = sim_model.encode(output_template, show_progress_bar=False)
+
+            space_tokenized_template = output_template.split()
+            tokenized_output_template = [] 
+            for w in space_tokenized_template:
+                tokenized_output_template.extend(self.tokenizer.tokenize(w, add_prefix_space=True))
+
+            self.all_output_templates[doc_key[0]].append(tokenized_output_template)
+            self.all_out_template_embs[doc_key[0]].append(out_template_emb)
 
         return (doc_key, sample_output, tgt_token_ids) 
 
