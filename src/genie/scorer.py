@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--coref-file', type=str)
     parser.add_argument('--head-only', action='store_true')
     parser.add_argument('--coref', action='store_true')
-    parser.add_argument('--dataset',type=str, default='ACE', choices=['ACE', 'KAIROS','AIDA'])
+    parser.add_argument('--dataset',type=str, default='KAIROS', choices=['ACE', 'KAIROS','AIDA'])
     args = parser.parse_args() 
 
 
@@ -143,7 +143,7 @@ if __name__ == '__main__':
                         coref_mapping[doc_id][(entity['start'], entity['end']-1)] = ent_id # all indexes are inclusive 
 
         
-
+    # import ipdb; ipdb.set_trace()
     pred_arg_num =0 
     gold_arg_num =0
     arg_idn_num =0 
@@ -167,6 +167,7 @@ if __name__ == '__main__':
         template = ontology_dict[evt_type]['template']
         # extract argument text 
         predicted_args = extract_args_from_template(ex,template, ontology_dict)
+        # import ipdb; ipdb.set_trace()
         # get trigger 
         # extract argument span
         trigger_start = ex['event']['trigger']['start']
@@ -198,7 +199,7 @@ if __name__ == '__main__':
                         head_only=args.head_only, doc=doc)
                         if arg_span: predicted_set.add((arg_span[0], arg_span[1], evt_type, argname))
                         
-                    
+        # import ipdb; ipdb.set_trace()          
         # get gold spans         
         gold_set = set() 
         gold_canonical_set = set() # set of canonical mention ids, singleton mentions will not be here 
