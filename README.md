@@ -28,3 +28,14 @@ Code and data for paper the ACL 22 paper.
 
 
 	Train:``./scripts/train_kairos_adv.sh`` Test: ``./scripts/test_kairos_adv.sh``
+	
+## Cite
+
+If you use our code or data/outputs, please cite:
+
+	@InProceedings{memory_ie,
+	  author = {Xinya Du, Sha Li and Heng Ji},
+	  title = {Dynamic Global Memory for Document-level Argument Extraction},
+	  booktitle = {Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics},
+	  year = {2022},
+	}
