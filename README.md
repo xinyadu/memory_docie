@@ -1,6 +1,6 @@
-# Argument Extraction by Generation
+# Dynamic Global Memory for Document-level Argument Extraction
 
-Code for paper "Document-Level Argument Extraction by Conditional Generation". NAACL 21'
+Code and data for paper the ACL 22 paper.
 
 
 ## Dependencies 
@@ -9,8 +9,22 @@ Code for paper "Document-Level Argument Extraction by Conditional Generation". N
 - pytorch-lightning=1.0.6
 - spacy=3.0 # conflicts with transformers
 - pytorch-struct=0.4 
+- sentence-transformers=2.1.0
 
 ## Datasets
-- RAMS (Download at [https://nlp.jhu.edu/rams/])
-- ACE05 (Access from LDC[https://catalog.ldc.upenn.edu/LDC2006T06] and preprocessing following OneIE[http://blender.cs.illinois.edu/software/oneie/])
+<!-- - RAMS (Download at [https://nlp.jhu.edu/rams/]) -->
+<!-- - ACE05 (Access from LDC[https://catalog.ldc.upenn.edu/LDC2006T06] and preprocessing following OneIE[http://blender.cs.illinois.edu/software/oneie/]) -->
 - WikiEvents (included in this repo)
+
+
+## Running
+
+
+- Normal Data Setting
+
+	Train:``./scripts/train_kairos.sh`` Test: ``./scripts/test_kairos.sh``
+
+- Adversarial Examples Setting
+
+
+	Train:``./scripts/train_kairos_adv.sh`` Test: ``./scripts/test_kairos_adv.sh``

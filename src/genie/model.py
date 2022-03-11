@@ -77,6 +77,14 @@ class GenIEModel(pl.LightningModule):
         # # ('GenericCrime.GenericCrime.GenericCrime_Victim', 'GenericCrime.GenericCrime.GenericCrime_Victim'),
         # # ('GenericCrime.GenericCrime.GenericCrime_Victim', 'Life.Die.Unspecified_Victim'),
         }
+        self.pair_constrains_adv = {
+        ("Conflict.Attack.DetonateExplode_Attacker", "Justice.ArrestJailDetain.Unspecified_Jailer"),
+        ("Life.Injure.Unspecified_Victim", "Medical.Intervention.Unspecified_Treater"),
+        ("Life.Die.Unspecified_Victim", "Life.Die.Unspecified_Killer"),
+        ("Life.Die.Unspecified_Victim", "Life.Injure.Unspecified_Injurer"),
+        }
+        if self.hparams.adv:
+            self.pair_constraints = self.pair_constrains_adv
         self.up_constrains = {
         "Killer_Attacker_Injurer_Damager_Destroyer": "Killer_Attacker_Destroyer_Defendant",
         "JudgeCourt": "JudgeCourt",

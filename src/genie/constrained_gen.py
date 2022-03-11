@@ -643,6 +643,8 @@ class BartConstrainedGen(PreTrainedModel):
             #     up_words_ids2.append(7517)
             if cur_tok_id == 2385: # Jr.
                 up_words_ids2.append(4)
+            # if cur_tok_id == 2: # only for adv!!
+                # down_words_ids.append(50265)
             # # import ipdb; ipdb.set_trace()
             if id_pairs_up:
                 if cur_tok_id in id_pairs_up:

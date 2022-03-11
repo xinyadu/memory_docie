@@ -77,6 +77,7 @@ def main():
     parser.add_argument('--sample-gen', action='store_true', help='Do sampling when generation.')
     parser.add_argument('--knowledge-pair-gen', action='store_true', help='decoding based on constraint pairs.')
     parser.add_argument('--sim_train', action='store_true', help='train with most similar template as additionl context.')
+    parser.add_argument('--adv', action='store_true', help='adv test')
     parser.add_argument("--train_batch_size", default=8, type=int, help="Batch size per GPU/CPU for training.")
     parser.add_argument(
         "--eval_batch_size", default=8, type=int, help="Batch size per GPU/CPU for evaluation."

@@ -175,7 +175,10 @@ class KAIROSDataModule(pl.LightningDataModule):
             
     def prepare_data(self):
         if self.hparams.sim_train:
-            data_dir = 'preprocessed_simtr_{}'.format(self.hparams.dataset)
+            if not self.hparams.adv:
+                data_dir = 'preprocessed_simtr_{}'.format(self.hparams.dataset)
+            else:
+                data_dir = 'preprocessed_simtr_adv_{}'.format(self.hparams.dataset)
         else:
             data_dir = 'preprocessed_{}'.format(self.hparams.dataset)
         if not os.path.exists(data_dir):
@@ -188,11 +191,15 @@ class KAIROSDataModule(pl.LightningDataModule):
 
             for split,f in [('train',self.hparams.train_file), ('val',self.hparams.val_file), ('test',self.hparams.test_file)]:
                 coref_split = 'dev' if split=='val' else split 
-                coref_reader = open(os.path.join(self.hparams.coref_dir, '{}.jsonlines'.format(coref_split)))
+                if self.hparams.adv and split == 'test':
+                    coref_reader = open(os.path.join(self.hparams.coref_dir, '{}_adv.jsonlines'.format(coref_split)))
+                else:
+                    coref_reader = open(os.path.join(self.hparams.coref_dir, '{}.jsonlines'.format(coref_split)))
                 with open(f,'r') as reader,  open(os.path.join(data_dir,'{}.jsonl'.format(split)), 'w') as writer:
                     for line, coref_line in zip(reader, coref_reader):
                         ex = json.loads(line.strip())
                         corefs = json.loads(coref_line.strip())
+                        if ex['doc_id'] != corefs['doc_key']: print(split, ex['doc_id'], corefs['doc_key'])
                         assert(ex['doc_id'] == corefs['doc_key'])
                         # mapping from entity id to information mention
                         ent2info = {} 
@@ -267,7 +274,10 @@ class KAIROSDataModule(pl.LightningDataModule):
     
     def train_dataloader(self):
         if self.hparams.sim_train:
-            dataset = IEDataset('preprocessed_simtr_{}/train.jsonl'.format(self.hparams.dataset))
+            if not self.hparams.adv:
+                dataset = IEDataset('preprocessed_simtr_{}/train.jsonl'.format(self.hparams.dataset))
+            else:
+                dataset = IEDataset('preprocessed_simtr_adv_{}/train.jsonl'.format(self.hparams.dataset))
         else:
             dataset = IEDataset('preprocessed_{}/train.jsonl'.format(self.hparams.dataset))
         
@@ -281,7 +291,10 @@ class KAIROSDataModule(pl.LightningDataModule):
     
     def val_dataloader(self):
         if self.hparams.sim_train:
-            dataset = IEDataset('preprocessed_simtr_{}/val.jsonl'.format(self.hparams.dataset))
+            if not self.hparams.adv:
+                dataset = IEDataset('preprocessed_simtr_{}/val.jsonl'.format(self.hparams.dataset))
+            else:
+                dataset = IEDataset('preprocessed_simtr_adv_{}/val.jsonl'.format(self.hparams.dataset))
         else:
             dataset = IEDataset('preprocessed_{}/val.jsonl'.format(self.hparams.dataset))
         
@@ -291,10 +304,14 @@ class KAIROSDataModule(pl.LightningDataModule):
         return dataloader
 
     def test_dataloader(self):
-        if self.hparams.sim_train:
+        # if self.hparams.sim_train:
+        if not self.hparams.adv:
             dataset = IEDataset('preprocessed_simtr_{}/test.jsonl'.format(self.hparams.dataset))
         else:
-            dataset = IEDataset('preprocessed_{}/test.jsonl'.format(self.hparams.dataset))
+            dataset = IEDataset('preprocessed_simtr_adv_{}/test.jsonl'.format(self.hparams.dataset))
+        # else:
+
+            # dataset = IEDataset('preprocessed_{}/test.jsonl'.format(self.hparams.dataset))
 
         dataloader = DataLoader(dataset[:], pin_memory=True, num_workers=2, 
             collate_fn=my_collate, 
