@@ -20,11 +20,11 @@ Code and data for paper the ACL 22 paper.
 ## Running
 
 
-- Normal Data Setting
+- Normal data setting
 
 	Train:``./scripts/train_kairos.sh`` Test: ``./scripts/test_kairos.sh``
 
-- Adversarial Examples Setting
+- Adversarial data setting
 
 
 	Train:``./scripts/train_kairos_adv.sh`` Test: ``./scripts/test_kairos_adv.sh``
