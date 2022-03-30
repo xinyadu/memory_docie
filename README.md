@@ -1,6 +1,6 @@
 # Dynamic Global Memory for Document-level Argument Extraction
 
-Code and data for paper the ACL 22 paper.
+Code and data for paper the ACL 22 paper ([link](http://xinyadu.github.io/papers/ACL22_Doc_level_informative_arg_extraction.pdf)).
 
 
 ## Dependencies 
