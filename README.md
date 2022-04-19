@@ -34,7 +34,7 @@ Code and data for paper the ACL 22 paper ([link](http://xinyadu.github.io/papers
 If you use our code or data/outputs, please cite:
 
 	@InProceedings{memory_ie,
-	  author = {Xinya Du, Sha Li and Heng Ji},
+	  author = {Du, Xinya and Li, Sha and Ji, Heng},
 	  title = {Dynamic Global Memory for Document-level Argument Extraction},
 	  booktitle = {Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics},
 	  year = {2022},
